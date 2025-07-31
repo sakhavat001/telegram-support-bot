@@ -3,12 +3,14 @@ import os
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+# Tokeni mühit dəyişənindən alırıq (Railway üçün)
 TOKEN = os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
-# Operatorun Telegram chat ID-sini daxil edin
-OPERATOR_CHAT_ID = 123456789  # Buraya öz operator chat ID-nizi yazın
+# Operatorun Telegram chat ID-si (öz ID-nizi daxil edin)
+OPERATOR_CHAT_ID = 4904903014  # <-- BURANI DƏYİŞİN
 
+# Menyu düymələri
 main_menu = InlineKeyboardMarkup(row_width=1)
 main_menu.add(
     InlineKeyboardButton("📌 Haqqımızda", callback_data="about"),
@@ -16,6 +18,7 @@ main_menu.add(
     InlineKeyboardButton("🌐 Veb sayt", callback_data="website")
 )
 
+# /start və /menu komandası
 @bot.message_handler(commands=['start', 'menu'])
 def send_welcome(message):
     bot.send_message(
@@ -24,37 +27,45 @@ def send_welcome(message):
         reply_markup=main_menu
     )
 
+# Menyu düymələrinin cavabları
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
-    responses = {
-        "about": "Biz IT ilə bağlı bütün xidmətləri göstəririk.",
-        "contact": "Əlaqə nömrəsi: +994 51 111 11 11",
-        "website": "Veb sayt hazırlanması 300 AZN-dən başlayır."
-    }
-    if call.data in responses:
+    if call.data == "about":
         bot.answer_callback_query(call.id)
+        bot.send_message(call.message.chat.id, "Biz IT ilə bağlı bütün xidmətləri göstəririk.")
+    
+    elif call.data == "website":
+        bot.answer_callback_query(call.id)
+        bot.send_message(call.message.chat.id, "Veb sayt hazırlanması 300 AZN-dən başlayır.")
+    
+    elif call.data == "contact":
+        bot.answer_callback_query(call.id)
+        
+        # Operatora bildiriş
+        operator_text = (
+            f"📞 Əlaqə istəyi!\n"
+            f"👤 İstifadəçi: @{call.from_user.username or 'Ad yoxdur'}\n"
+            f"🆔 Chat ID: {call.message.chat.id}"
+        )
+        bot.send_message(OPERATOR_CHAT_ID, operator_text)
+        
+        # İstifadəçiyə cavab
+        bot.send_message(call.message.chat.id, "✅ Operator sizinlə tezliklə əlaqə saxlayacaq.")
 
-        # Əvvəlki mesajı silirik
-        try:
-            bot.delete_message(call.message.chat.id, call.message.message_id)
-        except Exception as e:
-            print(f"Mesajı silmək mümkün olmadı: {e}")
-
-        # Yeni mesajı göndəririk
-        bot.send_message(call.message.chat.id, responses[call.data])
-
+# İstənilən mesajı qəbul edib yönləndirmək
 @bot.message_handler(func=lambda message: True)
 def handle_messages(message):
     if message.chat.id != OPERATOR_CHAT_ID:
-        # Müştəri mesajını operatora göndəririk
+        # Müştəri mesajı operatora yönləndirilir
         forward_text = (
-            f"👤 Müştəri (@{message.from_user.username}):\n"
-            f"{message.text}\n"
-            f"Chat ID: {message.chat.id}"
+            f"📩 Yeni mesaj:\n"
+            f"👤 @{message.from_user.username or 'Ad yoxdur'}\n"
+            f"{message.text}\n\n"
+            f"🆔 Chat ID: {message.chat.id}"
         )
         bot.send_message(OPERATOR_CHAT_ID, forward_text)
     else:
-        # Operator mesajlarını qəbul edirik
+        # Operator cavab verir
         if message.text.startswith('/reply'):
             parts = message.text.split(' ', 2)
             if len(parts) < 3:
@@ -66,8 +77,9 @@ def handle_messages(message):
                 bot.send_message(OPERATOR_CHAT_ID, "Chat ID düzgün deyil.")
                 return
             reply_text = parts[2]
-            bot.send_message(target_chat_id, f"Operatordan: {reply_text}")
+            bot.send_message(target_chat_id, f"👨‍💼 Operator: {reply_text}")
         else:
-            bot.send_message(OPERATOR_CHAT_ID, "Naməlum əməliyyat. Cavab üçün: /reply <chat_id> <mesaj>")
+            bot.send_message(OPERATOR_CHAT_ID, "Operator üçün komanda: /reply <chat_id> <mesaj>")
 
+# Botu işə salırıq
 bot.polling()
