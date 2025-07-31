@@ -8,7 +8,7 @@ TOKEN = os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
 # Telegram qrupunun chat ID-si → BURANI DƏYİŞİN
-GROUP_CHAT_ID = -2636527214  # <-- Öz qrupunuzun chat ID-sini bura yazın
+GROUP_CHAT_ID = -1002636527214  # <-- Öz qrupunuzun chat ID-sini bura yazın
 
 # Menyu düymələri
 main_menu = InlineKeyboardMarkup(row_width=1)
